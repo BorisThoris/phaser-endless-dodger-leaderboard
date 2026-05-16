@@ -51,6 +51,7 @@ export default class DodgeGame extends Phaser.Scene {
     this.scoreText = null;
     this.gameOverText = null;
     this.replayButton = null;
+    this.startOverlay = null;
     this.music = null;
     this.gameOverMusic = null;
     this.ooGnome = null;
@@ -64,6 +65,7 @@ export default class DodgeGame extends Phaser.Scene {
     this.score = 0;
     this.timer = 0;
     this.gameOver = false;
+    this.gameStarted = false;
     this.jumped = false;
     this.crouched = false;
     this.spikeMax = 0.4;
@@ -251,7 +253,6 @@ export default class DodgeGame extends Phaser.Scene {
     this.gameOverMusic = this.sound.add("gameOver");
     this.ooGnome = this.sound.add("ooGnome");
 
-    this.music.play();
     this.animationsHelper.createAnimations(this.anims);
 
     //Background
@@ -363,6 +364,52 @@ export default class DodgeGame extends Phaser.Scene {
 
     this.replayButton = this.add.sprite(1280 / 2 - 200, 70, "replay");
     this.replayButton.setScale(0.125);
+
+    this.showStartPrompt();
+  }
+
+  showStartPrompt() {
+    this.gameStarted = false;
+
+    const overlay = this.add.container(0, 0);
+    const background = this.add
+      .rectangle(0, 0, 1280, 720, 0x000000, 0.72)
+      .setOrigin(0, 0)
+      .setInteractive();
+    const title = this.add
+      .text(640, 300, "Ready to Run?", {
+        font: "bold 58px Arial",
+        fill: "#f6ff00"
+      })
+      .setOrigin(0.5);
+    const prompt = this.add
+      .text(640, 370, "Click, tap, or press any key to start", {
+        font: "bold 32px Arial",
+        fill: "#ffffff"
+      })
+      .setOrigin(0.5);
+
+    overlay.add([background, title, prompt]);
+    overlay.setDepth(1000);
+    this.startOverlay = overlay;
+
+    this.input.once("pointerdown", this.startGame, this);
+    this.input.keyboard.once("keydown", this.startGame, this);
+  }
+
+  startGame() {
+    if (this.gameStarted) return;
+
+    this.gameStarted = true;
+
+    if (this.startOverlay) {
+      this.startOverlay.destroy();
+      this.startOverlay = null;
+    }
+
+    if (!this.music.isPlaying) {
+      this.music.play();
+    }
   }
 
   addTouchControls(object, cursor) {
@@ -505,7 +552,9 @@ export default class DodgeGame extends Phaser.Scene {
     this.spikeMax = 0.4;
     this.gameOver = false;
     this.replayButton.destroy();
-    this.music.play();
+    if (!this.music.isPlaying) {
+      this.music.play();
+    }
     this.playerMovementHelper.reset();
 
     this.livesText.setText("Lives: " + this.lives);
@@ -555,6 +604,8 @@ export default class DodgeGame extends Phaser.Scene {
 
   //Movement
   update() {
+    if (!this.gameStarted) return;
+
     //Checking if game is over
     if (this.gameOver === false) {
       this.timer++;
