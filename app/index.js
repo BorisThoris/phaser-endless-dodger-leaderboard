@@ -13,7 +13,7 @@ var config = {
     default: "arcade",
     arcade: {
       gravity: { y: 700 },
-      debug: true
+      debug: false
     }
   },
   scene: [DodgeGame]
